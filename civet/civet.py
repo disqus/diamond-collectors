@@ -46,10 +46,10 @@ class CivetCollector(diamond.collector.Collector):
     def get_json(self):
         json_string = ''
 
+        address = (self.config['host'], int(self.config['port']))
+
         try:
-            s = socket.create_connection(
-                    (self.config['host'], int(self.config['port'])),
-                    timeout=1)
+            s = socket.create_connection(address, timeout=1)
 
             s.sendall('sample\n')
 
