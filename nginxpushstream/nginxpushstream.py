@@ -45,6 +45,7 @@ class NginxPushStreamCollector(diamond.collector.Collector):
             'port':     80,
             'location': '/push-stream-status',
             'path':     'nginxpushstream',
+            'method':   'Threaded',
         })
         return config
 

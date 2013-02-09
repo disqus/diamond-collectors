@@ -49,6 +49,7 @@ class PostfixStatsCollector(diamond.collector.Collector):
             'host':             'localhost',
             'port':             7777,
             'include_clients':  False,
+            'method':           'Threaded',
         })
         return config
 

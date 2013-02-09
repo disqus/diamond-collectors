@@ -40,6 +40,7 @@ class CivetCollector(diamond.collector.Collector):
             'host':     '127.0.0.1',
             'port':     7201,
             'path':     'civet',
+            'method':   'Threaded',
         })
         return config
 
