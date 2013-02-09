@@ -56,8 +56,10 @@ class PostfixStatsCollector(diamond.collector.Collector):
         json_string = ''
 
         try:
-            s = socket.socket()
-            s.connect((self.config['host'], int(self.config['port'])))
+            s = socket.create_connection(
+                    (self.config['host'], int(self.config['port'])),
+                    timeout=1)
+
             s.sendall('stats\n')
 
             while 1:
@@ -68,7 +70,8 @@ class PostfixStatsCollector(diamond.collector.Collector):
         except socket.error:
             return ''
         finally:
-            s.close()
+            if s:
+                s.close()
 
         return json_string
 
