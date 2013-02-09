@@ -1,3 +1,31 @@
+# coding=utf-8
+
+"""
+This collector tallies up CPU usage of processes that match defined filters.
+Each process can have at least 1 filter type defined.
+
+Example config file ProcessCpuCollector.conf
+
+```
+enabled=True
+[process]
+[[haproxy]]
+pidfile = /var/run/haproxy.pid
+exe = /usr/local/bin/haproxy
+cmdline = /usr/local/bin/haproxy.* -f /etc/haproxy/haproxy_misc.cfg.*
+```
+
+pidfile
+- Expects path to file containing a pid per line
+- Caches based on mtime of file
+
+exe
+- Performs fnmatch against the proc's exe path
+
+cmdline
+- Performs an re.search against the proc's cmdline
+"""
+
 import os
 import re
 
