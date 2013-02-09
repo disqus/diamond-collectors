@@ -6,7 +6,7 @@ Collect stats from civet
 #### Dependencies
 
  * socket
- * json
+ * json (or simplejson)
 
 """
 
@@ -59,6 +59,7 @@ class CivetCollector(diamond.collector.Collector):
                     break
                 json_string += data
         except socket.error:
+            self.log.exception("Error when talking to civet")
             return ''
         finally:
             if s:
@@ -72,6 +73,7 @@ class CivetCollector(diamond.collector.Collector):
         try:
             data = json.loads(json_string)
         except (ValueError, TypeError):
+            self.log.exception("Error parsing json from civet")
             return None
 
         return data

@@ -48,7 +48,7 @@ class NginxPushStreamCollector(diamond.collector.Collector):
         })
         return config
 
-    def collect(self):
+    def get_json(self):
         url = ''.join(['http://',
                        self.config['host'],
                        ':',
@@ -59,14 +59,24 @@ class NginxPushStreamCollector(diamond.collector.Collector):
             response = urllib2.urlopen(url)
         except urllib2.HTTPError, err:
             self.log.error("%s: %s", url, err)
-            return
+            return ''
+
+        return response
+
+    def get_data(self):
+        json_string = self.get_json()
 
         try:
-            result = json.load(response)
+            data = json.load(json_string)
         except (TypeError, ValueError):
-            self.log.error("Unable to parse json response from push-stream")
-            return
+            self.log.exception("Unable to parse response from push-stream")
+            return None
 
-        for key, stat in result.iteritems():
+        return data
+
+    def collect(self):
+        data = self.get_data()
+
+        for key, stat in data.iteritems():
             if key in self.METRIC_KEYS:
                 self.publish(key, stat)

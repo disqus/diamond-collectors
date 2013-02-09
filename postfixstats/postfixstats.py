@@ -7,8 +7,8 @@ get realtime cumulative stats.
 
 #### Dependencies
 
- * json
  * socket
+ * json (or simeplejson)
  * [postfix-stats](https://github.com/disqus/postfix-stats)
 
 """
@@ -68,6 +68,7 @@ class PostfixStatsCollector(diamond.collector.Collector):
                     break
                 json_string += data
         except socket.error:
+            self.log.exception("Error talking to postfix-stats")
             return ''
         finally:
             if s:
@@ -81,6 +82,7 @@ class PostfixStatsCollector(diamond.collector.Collector):
         try:
             data = json.loads(json_string)
         except (ValueError, TypeError):
+            self.log.exception("Error parsing json from postfix-stats")
             return None
 
         return data
