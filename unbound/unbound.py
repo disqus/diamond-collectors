@@ -51,7 +51,7 @@ class UnboundCollector(diamond.collector.Collector):
                 command.insert(0, self.config['sudo_cmd'])
 
             return subprocess.Popen(command,
-                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                    stdout=subprocess.PIPE,
                                     shell=True).communicate()[0]
         except OSError:
             self.log.exception("Unable to run %s", command)
