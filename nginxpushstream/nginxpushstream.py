@@ -78,6 +78,9 @@ class NginxPushStreamCollector(diamond.collector.Collector):
     def collect(self):
         data = self.get_data()
 
+        if not data:
+            return
+
         for key, stat in data.iteritems():
             if key in self.METRIC_KEYS:
                 self.publish(key, stat)
