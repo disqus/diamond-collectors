@@ -71,7 +71,7 @@ class NginxPushStreamCollector(diamond.collector.Collector):
         json_string = self.get_json()
 
         try:
-            data = json.load(json_string)
+            data = json.loads(json_string)
         except (TypeError, ValueError):
             self.log.exception("Unable to parse response from push-stream")
             return None
