@@ -57,9 +57,12 @@ class NginxPushStreamCollector(diamond.collector.Collector):
                        self.config['location']])
 
         try:
-            response = urllib2.urlopen(url)
+            response = urllib2.urlopen(url).read()
         except urllib2.HTTPError, err:
-            self.log.error("%s: %s", url, err)
+            self.log.error("%s %s: %s", url, err.code, err.read())
+            return ''
+        except urllib2.URLError, err:
+            self.log.error("%s: %s", url, err.reason)
             return ''
 
         return response
