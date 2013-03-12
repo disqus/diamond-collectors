@@ -47,6 +47,7 @@ class CivetCollector(diamond.collector.Collector):
     def get_json(self):
         json_string = ''
 
+        s = None
         address = (self.config['host'], int(self.config['port']))
 
         try:
