@@ -66,7 +66,7 @@ class NginxPushStreamCollector(diamond.collector.Collector):
             self.log.error("%s: %s", url, err.reason)
             return ''
         except socket.error, err:
-            self.logg.error("%s %s: %s", url, err.errno, err.message)
+            self.log.error("%s %s: %s", url, err.errno, err.message)
             return ''
 
         return response
