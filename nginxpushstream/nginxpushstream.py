@@ -24,7 +24,9 @@ import diamond.collector
 
 class NginxPushStreamCollector(diamond.collector.Collector):
     METRIC_KEYS = frozenset(['channels', 'broadcast_channels',
-                            'published_messages', 'subscribers', 'uptime'])
+                            'published_messages', 'stored_messages',
+                            'messages_in_trash', 'channels_in_trash',
+                            'subscribers', 'uptime'])
 
     def get_default_config_help(self):
         config_help = super(NginxPushStreamCollector,
