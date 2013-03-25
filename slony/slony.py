@@ -14,7 +14,7 @@ from postgres import QueryStats
 
 try:
     import psycopg2
-    import psycopg2.extras
+    import psycopg2.extensions
     psycopg2  # workaround for pyflakes issue #13
 except ImportError:
     psycopg2 = None
@@ -66,8 +66,8 @@ class SlonyCollector(diamond.collector.Collector):
 
         params = (
             self.config['slony_node_string'],
-            self.config['slony_schema'],
-            self.config['slony_schema'],
+            psycopg2.extensions.AsIs(self.config['slony_schema']),
+            psycopg2.extensions.AsIs(self.config['slony_schema']),
         )
 
         stat = SlonyStats(self.connections, parameters=params,
@@ -99,7 +99,7 @@ class SlonyStats(QueryStats):
     path = "slony.%(datname)s.%(metric)s.lag_events"
     multi_db = False
     query = """
-        SELECT SUBSTRING(sl.no_comment FROM '%s') AS node,
+        SELECT SUBSTRING(sl.no_comment FROM %s) AS node,
                st.st_lag_num_events AS lag_events
         FROM %s.sl_status AS st, %s.sl_node AS sl
         WHERE sl.no_id = st.st_received
