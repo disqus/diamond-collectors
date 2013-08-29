@@ -10,10 +10,16 @@ Collect stats via zk from storm and kafka
 
 import re
 from random import randint
-from stormkafkamon.monitor import (
-    process,
-    ZkClient,
-)
+
+try:
+    from stormkafkamon.monitor import (
+        process,
+        ZkClient,
+    )
+except ImportError:
+    proccess = None
+    ZkClient = None
+
 import diamond.collector
 
 
