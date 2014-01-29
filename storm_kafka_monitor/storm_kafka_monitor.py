@@ -25,15 +25,16 @@ import diamond.collector
 
 class StormKafkaMonitorCollector(diamond.collector.Collector):
     topology_pattern = re.compile(r'(.*?)-\d+-\d+')
-    zookeeper_server = 'zoo-%d.i.disqus.net' % randint(1, 5)
-    storm_root = '/kafkastorm'
+    zookeeper_server = 'zoo-1.i.disqus.net'
+    zookeeper_port = 2181   # Default port
+    spout_root = '/kafkastorm'
 
     def get_zk_client(self):
         """
         Lazy zk client.
         """
         if not hasattr(self, '_zk'):
-            self._zk = ZkClient(','.join(zookeeper_servers), storm_path)
+            self._zk = ZkClient(self.zookeeper_server, self.zookeeper_port)
         return self._zk
 
     def running_topologies(self):
@@ -41,7 +42,9 @@ class StormKafkaMonitorCollector(diamond.collector.Collector):
         Retrieve a list of all running topologies from zookeeper.
         """
         zk = self.get_zk_client()
+        zk.client.start()
         raw_storms = zk.client.get_children('/storm/storms')
+        zk.client.stop()
 
         storms = []
 
@@ -59,7 +62,10 @@ class StormKafkaMonitorCollector(diamond.collector.Collector):
 
     def get_topology_summary(self, topology):
         zk = self.get_zk_client()
-        return process(zk.spouts(self.storm_root, topology))
+        zk.client.start()
+        retval = process(zk.spouts(self.spout_root, topology))
+        zk.client.stop()
+        return retval
 
     def get_summaries(self):
         """
@@ -69,7 +75,7 @@ class StormKafkaMonitorCollector(diamond.collector.Collector):
         topologies = self.running_topologies()
         for topology in topologies:
             summary = self.get_topology_summary(topology)
-            storm.append(summary)
+            summaries.append(summary)
         return zip(topologies, summaries)
 
     def metric_name_from_state(self, partition_state):
