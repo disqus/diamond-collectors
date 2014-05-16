@@ -46,7 +46,7 @@ class TestPgbouncerCollector(CollectorTestCase):
     def test_multiple_instances(self, publish, _get_stats_by_database):
         _get_stats_by_database.return_value = {'foo': {'bar': 42}}
 
-        config = get_collector_config('PgbouncerCollector', {'instances': '127.0.0.1:6432, localhost:6433'})
+        config = get_collector_config('PgbouncerCollector', {'instances': ['127.0.0.1:6432', 'localhost:6433']})
         collector = PgbouncerCollector(config, None)
         collector.collect()
 
@@ -65,8 +65,8 @@ class TestPgbouncerCollector(CollectorTestCase):
         _get_stats_by_database.side_effect = side_effect
 
         config = get_collector_config('PgbouncerCollector', {
-            'instances': '127.0.0.1:6432, localhost:6433',
-            'instance_names': 'alpha, beta',
+            'instances': ['127.0.0.1:6432', 'localhost:6433'],
+            'instance_names': ['alpha', 'beta'],
         })
         collector = PgbouncerCollector(config, None)
         collector.collect()

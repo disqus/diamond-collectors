@@ -57,11 +57,16 @@ class PgbouncerCollector(diamond.collector.Collector):
             self.log.error('Unable to import module psycopg2.')
             return {}
 
-        instances = self.config['instances'].split(',')
-        if not self.config['instance_names'].strip():
+        instances = self.config['instances']
+        if isinstance(instances, basestring):
+            instances = [instances]
+
+        instance_names = self.config['instance_names']
+
+        if not instance_names:
             instance_names = instances
-        else:
-            instance_names = self.config['instance_names'].split(',')
+        elif isinstance(instance_names, basestring):
+            instance_names = [instance_names]
 
         if len(instances) != len(instance_names):
             self.log.error('Must provide same number of `instance_names` as `instances`.')
