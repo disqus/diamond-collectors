@@ -1,11 +1,28 @@
 # coding=utf-8
 
 """
-Collect metrics from postgresql
+Collect metrics from pgbouncer.
 
 #### Dependencies
 
  * psycopg2
+
+#### Example Configuration
+
+```
+enabled=True
+
+[instances]
+
+[[master]]
+host = localhost
+port = 6432
+
+[[replica]]
+host = localhost
+port = 6433
+password = foobar
+```
 
 """
 
@@ -32,10 +49,9 @@ class PgbouncerCollector(diamond.collector.Collector):
         config_help.update({
             'user': 'Username',
             'password': 'Password',
-            'instances': 'PgBouncer addresses, comma separated '
-                         '(e.g: "localhost:6432,localhost:6433")',
-            'instance_names': 'Pretty names to use for metric names, comma separated. '
-                              'Must map to instances (e.g: "master,replicas")',
+            'instances': 'A subcategory of pgbouncer instances with a host '
+                         'and port, and optionally user and password can be '
+                         'overridden per instance (see example).',
         })
 
         return config_help
@@ -44,10 +60,10 @@ class PgbouncerCollector(diamond.collector.Collector):
         config = super(PgbouncerCollector, self).get_default_config()
         config.update({
             'path': 'pgbouncer',
+            'method': 'Threaded',
             'user': 'postgres',
             'password': '',
-            'instances': 'localhost:6432',
-            'instance_names': '',
+            'instances': {},
         })
 
         return config
@@ -58,25 +74,23 @@ class PgbouncerCollector(diamond.collector.Collector):
             return {}
 
         instances = self.config['instances']
-        if isinstance(instances, basestring):
-            instances = [instances]
+        # HACK: setting default with subcategory messes up merging of configs,
+        # so we only set the default if one wasn't provided.
+        if not instances:
+            instances = {
+                'default': {
+                    'host': 'localhost',
+                    'port': '6432',
+                }
+            }
 
-        instance_names = self.config['instance_names']
+        for name, instance in instances.iteritems():
+            host = instance['host']
+            port = instance['port']
+            user = instance.get('user') or self.config['user']
+            password = instance.get('password') or self.config['password']
 
-        if not instance_names:
-            instance_names = instances
-        elif isinstance(instance_names, basestring):
-            instance_names = [instance_names]
-
-        if len(instances) != len(instance_names):
-            self.log.error('Must provide same number of `instance_names` as `instances`.')
-            return {}
-
-        for instance, name in izip(instances, instance_names):
-            instance = instance.strip()
-            host, port = instance.split(':')
-
-            for database, stats in self._get_stats_by_database(host, port).iteritems():
+            for database, stats in self._get_stats_by_database(host, port, user, password).iteritems():
                 for stat_name, stat_value in stats.iteritems():
                     self.publish(self._get_metric_name(name, database, stat_name),
                                  stat_value)
@@ -85,14 +99,10 @@ class PgbouncerCollector(diamond.collector.Collector):
         name = name.replace('.', '_').replace(':', '_').strip()
         return '.'.join([name, database, stat_name])
 
-    def _get_stats_by_database(self, host, port):
+    def _get_stats_by_database(self, host, port, user, password):
         # Mapping of database name -> stats.
         databases = defaultdict(dict)
-        conn = psycopg2.connect(database='pgbouncer',
-                                user=self.config['user'],
-                                password=self.config['password'],
-                                host=host,
-                                port=port)
+        conn = psycopg2.connect(database='pgbouncer', user=user, password=password, host=host, port=port)
 
         # Avoid using transactions, set isolation level to autocommit
         conn.set_isolation_level(0)

@@ -23,40 +23,19 @@ class TestPgbouncerCollector(CollectorTestCase):
 
     @patch.object(PgbouncerCollector, '_get_stats_by_database')
     @patch.object(PgbouncerCollector, 'publish')
-    def test_simple(self, publish, _get_stats_by_database):
+    def test_default(self, publish, _get_stats_by_database):
         _get_stats_by_database.return_value = {'foo': {'bar': 42}}
 
         self.collector.collect()
 
-        self.assertPublished(publish, 'localhost_6432.foo.bar', 42)
+        _get_stats_by_database.assert_called_with('localhost', '6432', 'postgres', '')
 
-    @patch.object(PgbouncerCollector, '_get_stats_by_database')
-    @patch.object(PgbouncerCollector, 'publish')
-    def test_single_instance(self, publish, _get_stats_by_database):
-        _get_stats_by_database.return_value = {'foo': {'bar': 42}}
-
-        config = get_collector_config('PgbouncerCollector', {'instances': '127.0.0.1:6433'})
-        collector = PgbouncerCollector(config, None)
-        collector.collect()
-
-        self.assertPublished(publish, '127_0_0_1_6433.foo.bar', 42)
-
-    @patch.object(PgbouncerCollector, '_get_stats_by_database')
-    @patch.object(PgbouncerCollector, 'publish')
-    def test_multiple_instances(self, publish, _get_stats_by_database):
-        _get_stats_by_database.return_value = {'foo': {'bar': 42}}
-
-        config = get_collector_config('PgbouncerCollector', {'instances': ['127.0.0.1:6432', 'localhost:6433']})
-        collector = PgbouncerCollector(config, None)
-        collector.collect()
-
-        self.assertPublished(publish, '127_0_0_1_6432.foo.bar', 42)
-        self.assertPublished(publish, 'localhost_6433.foo.bar', 42)
+        self.assertPublished(publish, 'default.foo.bar', 42)
 
     @patch.object(PgbouncerCollector, '_get_stats_by_database')
     @patch.object(PgbouncerCollector, 'publish')
     def test_instance_names(self, publish, _get_stats_by_database):
-        def side_effect(host, port):
+        def side_effect(host, port, user, password):
             if (host, port) == ('127.0.0.1', '6432'):
                 return {'foo': {'bar': 42}}
             elif (host, port) == ('localhost', '6433'):
@@ -65,14 +44,46 @@ class TestPgbouncerCollector(CollectorTestCase):
         _get_stats_by_database.side_effect = side_effect
 
         config = get_collector_config('PgbouncerCollector', {
-            'instances': ['127.0.0.1:6432', 'localhost:6433'],
-            'instance_names': ['alpha', 'beta'],
+            'instances': {
+                'alpha': {
+                    'host': '127.0.0.1',
+                    'port': '6432',
+                },
+                'beta': {
+                    'host': 'localhost',
+                    'port': '6433',
+                },
+            }
         })
         collector = PgbouncerCollector(config, None)
         collector.collect()
 
         self.assertPublished(publish, 'alpha.foo.bar', 42)
         self.assertPublished(publish, 'beta.foo.baz', 24)
+
+    @patch.object(PgbouncerCollector, '_get_stats_by_database')
+    def test_override_user_password(self, _get_stats_by_database):
+        _get_stats_by_database.return_value = {}
+
+        config = get_collector_config('PgbouncerCollector', {
+            'instances': {
+                'test1': {
+                    'host': '127.0.0.1',
+                    'port': '6433',
+                    'password': 'foobar',
+                },
+                'test2': {
+                    'host': '127.0.0.2',
+                    'port': '6432',
+                    'user': 'pgbouncer',
+                }
+            }
+        })
+        collector = PgbouncerCollector(config, None)
+        collector.collect()
+
+        _get_stats_by_database.assert_any_call('127.0.0.1', '6433', 'postgres', 'foobar')
+        _get_stats_by_database.assert_any_call('127.0.0.2', '6432', 'pgbouncer', '')
 
 
 ################################################################################
