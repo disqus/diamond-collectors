@@ -33,6 +33,8 @@ class SlonyCollector(diamond.collector.Collector):
             'slony_node_string': 'Regex for SQL SUBSTRING to pull hostname from sl_node.no_comment',
             'slony_schema': 'Slony schemaname',
             'underscore': 'Convert _ to .',
+            'pg_version':
+            "The version of postgres that you'll be monitoring eg in format 9.3",
         })
         return config_help
 
@@ -51,7 +53,8 @@ class SlonyCollector(diamond.collector.Collector):
             'slony_node_string': 'Node [0-9]+ - postgres@localhost',
             'slony_schema': '_slony',
             'underscore': False,
-            'method': 'Threaded'
+            'method': 'Threaded',
+            'pg_version': 9.3,
         })
         return config
 
@@ -73,7 +76,7 @@ class SlonyCollector(diamond.collector.Collector):
         stat = SlonyStats(self.connections, parameters=params,
                           underscore=self.config['underscore'])
 
-        stat.fetch()
+        stat.fetch(self.config['pg_version'])
         [self.publish(metric, value) for metric, value in stat]
 
         # Cleanup
