@@ -64,8 +64,7 @@ class SlonyCollector(diamond.collector.Collector):
             return {}
 
         db = self.config['slony_db']
-        self.connections = {}
-        self.connections[db] = self._connect(database=db)
+        conn = self._connect(database=db)
 
         params = (
             self.config['slony_node_string'],
@@ -73,14 +72,14 @@ class SlonyCollector(diamond.collector.Collector):
             psycopg2.extensions.AsIs(self.config['slony_schema']),
         )
 
-        stat = SlonyStats(self.connections, parameters=params,
+        stat = SlonyStats(db, conn, parameters=params,
                           underscore=self.config['underscore'])
 
         stat.fetch(self.config['pg_version'])
         [self.publish(metric, value) for metric, value in stat]
 
         # Cleanup
-        [conn.close() for conn in self.connections.itervalues()]
+        conn.close()
 
     def _connect(self, database=''):
         conn = psycopg2.connect(
